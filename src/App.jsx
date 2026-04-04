@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
 // Mock Data
 const TOURNAMENTS = [
-  { id: 1, type: 'Squad', map: 'Bermuda', time: '08:00 PM', entry: 30, prize: 1200, slots: '45/52', status: 'Open' },
-  { id: 2, type: 'Duo', map: 'Kalahari', time: '09:30 PM', entry: 20, prize: 600, slots: '38/40', status: 'Almost Full' },
-  { id: 3, type: 'Solo', map: 'Purgatory', time: '11:00 PM', entry: 10, prize: 400, slots: '20/50', status: 'Open' },
-  { id: 4, type: 'Squad', map: 'Alpine', time: '12:30 AM', entry: 50, prize: 2500, slots: '12/52', status: 'Open' },
+  { id: 1, type: 'Squad', map: 'Bermuda', time: '08:00 PM', entry: 30, prize: 1200, filled: 45, total: 52, status: 'Open' },
+  { id: 2, type: 'Duo', map: 'Kalahari', time: '09:30 PM', entry: 20, prize: 600, filled: 38, total: 40, status: 'Almost Full' },
+  { id: 3, type: 'Solo', map: 'Purgatory', time: '11:00 PM', entry: 10, prize: 400, filled: 20, total: 50, status: 'Open' },
+  { id: 4, type: 'Squad', map: 'Alpine', time: '12:30 AM', entry: 50, prize: 2500, filled: 12, total: 52, status: 'Open' },
 ];
 
 const ICONS = {
@@ -19,7 +19,8 @@ const ICONS = {
   check: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
 };
 
-// Components
+// --- Sub-Components ---
+
 const Sidebar = ({ page, setPage }) => {
   const navItems = [
     { id: 'home', label: 'Home', icon: ICONS.home },
@@ -74,23 +75,31 @@ const StatCard = ({ icon, value, label, color }) => (
   </div>
 );
 
-const TournamentCard = ({ t }) => (
-  <div className="tournament-card">
-    <div className="card-header">
-      <span className={`badge ${t.status === 'Open' ? 'open' : 'full'}`}>{t.status}</span>
-      <span className="time">{t.time} IST</span>
-    </div>
-    <div className="card-body">
-      <h3>{t.type} • {t.map}</h3>
-      <div className="meta-row">
-        <span><strong>₹{t.entry}</strong> Entry</span>
-        <span><strong>₹{t.prize}</strong> Prize</span>
-        <span><strong>{t.slots}</strong> Slots</span>
+const TournamentCard = ({ t }) => {
+  const progress = (t.filled / t.total) * 100;
+  return (
+    <div className="tournament-card">
+      <div className="card-header">
+        <span className={`badge ${t.status === 'Open' ? 'open' : 'full'}`}>{t.status}</span>
+        <span className="time">{t.time} IST</span>
       </div>
+      <div className="card-body">
+        <h3>{t.type} • {t.map}</h3>
+        <div className="slot-bar-container">
+            <div className="slot-bar-fill" style={{ width: `${progress}%` }}></div>
+        </div>
+        <div className="meta-row">
+          <span><strong>₹{t.entry}</strong> Entry</span>
+          <span><strong>₹{t.prize}</strong> Prize</span>
+          <span><strong>{t.filled}/{t.total}</strong> Slots</span>
+        </div>
+      </div>
+      <button className="join-btn">Join Match</button>
     </div>
-    <button className="join-btn">Join Match</button>
-  </div>
-);
+  );
+};
+
+// --- Pages ---
 
 const HomePage = ({ balance }) => (
   <div className="page fade-in">
@@ -202,13 +211,14 @@ const ProfilePage = () => (
   </div>
 );
 
-// Toast Notification
 const Toast = ({ message }) => (
   <div className="toast">
     <span style={{color: '#22c55e', marginRight: '8px'}}>{ICONS.check}</span>
     {message}
   </div>
 );
+
+// --- Main App Component ---
 
 export default function App() {
   const [page, setPage] = useState('home');
@@ -225,8 +235,8 @@ export default function App() {
 
   const handleCashIn = (e) => {
     e.preventDefault();
-    const amt = parseFloat(cashAmt);
-    if (amt && amt >= 50) {
+    const amt = Number(cashAmt);
+    if (amt >= 50) {
       setBalance(prev => prev + amt);
       notify(`₹${amt} added successfully!`);
       setCashAmt('');
@@ -235,7 +245,7 @@ export default function App() {
 
   const handleWithdraw = (e) => {
     e.preventDefault();
-    const amt = parseFloat(withdrawAmt);
+    const amt = Number(withdrawAmt);
     if (!upi.includes('@')) return notify('Invalid UPI ID');
     if (amt >= 100 && amt <= balance) {
       setBalance(prev => prev - amt);
@@ -252,10 +262,13 @@ export default function App() {
       <main className="main">
         <Header balance={balance} />
         {toast && <Toast message={toast} />}
-        {page === 'home' && <HomePage balance={balance} />}
-        {page === 'cashin' && <CashInPage balance={balance} amount={cashAmt} setAmount={setCashAmt} onSubmit={handleCashIn} />}
-        {page === 'withdraw' && <WithdrawPage balance={balance} amount={withdrawAmt} setAmount={setWithdrawAmt} upi={upi} setUpi={setUpi} onSubmit={handleWithdraw} />}
-        {page === 'profile' && <ProfilePage />}
+        
+        <div className="content-container">
+            {page === 'home' && <HomePage balance={balance} />}
+            {page === 'cashin' && <CashInPage balance={balance} amount={cashAmt} setAmount={setCashAmt} onSubmit={handleCashIn} />}
+            {page === 'withdraw' && <WithdrawPage balance={balance} amount={withdrawAmt} setAmount={setWithdrawAmt} upi={upi} setUpi={setUpi} onSubmit={handleWithdraw} />}
+            {page === 'profile' && <ProfilePage />}
+        </div>
       </main>
     </div>
   );
