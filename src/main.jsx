@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './App.css';
+import './main.css';
 
 export default function App() {
   const [page, setPage] = useState('home');
