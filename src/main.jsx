@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
-import './main.css';
 
 const ICONS = {
   home: (
@@ -27,7 +26,7 @@ const ICONS = {
     </svg>
   ),
   bell: (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9z" />
       <path d="M13.73 21a1.94 1.94 0 0 1-3.46 0" />
     </svg>
@@ -38,87 +37,78 @@ function App() {
   const [page, setPage] = useState('home');
   const [balance, setBalance] = useState(1250);
   const [transactions, setTransactions] = useState([
-    { id: 1, type: 'deposit', amount: 500, date: 'Today', status: 'Completed' },
-    { id: 2, type: 'win', amount: 350, date: 'Yesterday', status: 'Completed' },
-    { id: 3, type: 'withdraw', amount: -200, date: 'Mar 30', status: 'Completed' },
+    { id: 1, type: 'win', amount: 450, date: 'Today', status: 'Completed' },
+    { id: 2, type: 'deposit', amount: 500, date: 'Yesterday', status: 'Completed' },
+    { id: 3, type: 'withdraw', amount: -300, date: 'Mar 31', status: 'Completed' },
   ]);
 
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
+  const [toast, setToast] = useState({ show: false, message: '' });
   const accountName = "Ryno_King_Sir";
 
-  const showNotification = (message) => {
-    setToastMessage(message);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+  const showToast = (message) => {
+    setToast({ show: true, message });
+    setTimeout(() => setToast({ show: false, message: '' }), 2800);
   };
 
-  const handleDeposit = (amount) => {
+  const handleDeposit = () => {
+    const input = document.getElementById('depositAmount');
+    const amount = parseInt(input?.value);
+
     if (!amount || amount < 50) {
-      showNotification("Minimum deposit is ৳50");
+      showToast("Minimum deposit amount is ৳50");
       return;
     }
-    setBalance(prev => prev + Number(amount));
+
+    setBalance(prev => prev + amount);
     setTransactions(prev => [{
       id: Date.now(),
       type: 'deposit',
-      amount: Number(amount),
+      amount: amount,
       date: 'Just now',
       status: 'Completed'
     }, ...prev]);
-    showNotification(`৳${amount} deposited successfully via bKash!`);
+
+    showToast(`৳${amount} added successfully via bKash!`);
+    if (input) input.value = '';
   };
 
-  const handleWithdraw = (amount, wallet) => {
+  const handleWithdraw = () => {
+    const amountInput = document.getElementById('withdrawAmount');
+    const numberInput = document.getElementById('bKashNumber');
+
+    const amount = parseInt(amountInput?.value);
+    const number = numberInput?.value.trim();
+
     if (!amount || amount < 50) {
-      showNotification("Minimum withdrawal is ৳50");
+      showToast("Minimum withdrawal is ৳50");
       return;
     }
     if (amount > balance) {
-      showNotification("Insufficient balance!");
+      showToast("Insufficient balance!");
       return;
     }
-    if (!wallet || !wallet.startsWith('01')) {
-      showNotification("Please enter valid bKash number");
+    if (!number || number.length < 11 || !number.startsWith('01')) {
+      showToast("Enter valid bKash number (01XXXXXXXXX)");
       return;
     }
 
-    setBalance(prev => prev - Number(amount));
+    setBalance(prev => prev - amount);
     setTransactions(prev => [{
       id: Date.now(),
       type: 'withdraw',
-      amount: -Number(amount),
+      amount: -amount,
       date: 'Just now',
       status: 'Pending'
     }, ...prev]);
-    showNotification(`Withdrawal request of ৳${amount} sent to ${wallet}`);
-  };
 
-  // Mobile bottom nav
-  const BottomNav = () => (
-    <div className="bottom-nav">
-      <button onClick={() => setPage('home')} className={`nav-item ${page === 'home' ? 'active' : ''}`}>
-        {ICONS.home}
-        <span>Home</span>
-      </button>
-      <button onClick={() => setPage('funds')} className={`nav-item ${page === 'funds' ? 'active' : ''}`}>
-        {ICONS.funds}
-        <span>Funds</span>
-      </button>
-      <button onClick={() => setPage('tournament')} className={`nav-item ${page === 'tournament' ? 'active' : ''}`}>
-        {ICONS.trophy}
-        <span>Tournaments</span>
-      </button>
-      <button onClick={() => setPage('profile')} className={`nav-item ${page === 'profile' ? 'active' : ''}`}>
-        {ICONS.profile}
-        <span>Profile</span>
-      </button>
-    </div>
-  );
+    showToast(`Withdrawal request of ৳${amount} sent to ${number}`);
+    if (amountInput) amountInput.value = '';
+    if (numberInput) numberInput.value = '';
+  };
 
   return (
     <div className="app">
-      {/* Sidebar - Desktop only */}
+      {/* Desktop Sidebar */}
       <aside className="sidebar">
         <div className="logo" onClick={() => setPage('home')}>R</div>
         <nav className="nav-menu">
@@ -164,8 +154,8 @@ function App() {
                   <span className="stat-label">Current Balance</span>
                 </div>
                 <div className="stat-card">
-                  <span className="stat-value" style={{ fontSize: '18px' }}>{accountName}</span>
-                  <span className="stat-label">Verified Player</span>
+                  <span className="stat-value" style={{fontSize: '18px'}}>{accountName}</span>
+                  <span className="stat-label">Verified Account</span>
                 </div>
               </div>
 
@@ -183,15 +173,18 @@ function App() {
                 ))}
               </div>
 
-              <h2 className="section-title" style={{ marginTop: '40px' }}>Recent Activity</h2>
+              <h2 className="section-title">Recent Activity</h2>
               <div className="transactions-list">
-                {transactions.slice(0, 4).map(tx => (
+                {transactions.map(tx => (
                   <div key={tx.id} className="transaction-item">
                     <div>
-                      <strong>{tx.type === 'deposit' ? 'Deposit' : tx.type === 'win' ? 'Tournament Win' : 'Withdrawal'}</strong>
+                      <strong>
+                        {tx.type === 'deposit' ? 'Deposit via bKash' : 
+                         tx.type === 'win' ? 'Tournament Win' : 'Withdrawal to bKash'}
+                      </strong>
                       <p>{tx.date}</p>
                     </div>
-                    <span className={`amount ${tx.amount > 0 ? 'positive' : 'negative'}`}>
+                    <span className={`tx-amount ${tx.amount > 0 ? 'positive' : 'negative'}`}>
                       {tx.amount > 0 ? '+' : ''}৳{Math.abs(tx.amount)}
                     </span>
                   </div>
@@ -200,57 +193,41 @@ function App() {
             </div>
           )}
 
-          {/* FUNDS PAGE - Only bKash */}
+          {/* FUNDS PAGE - ONLY BKASH */}
           {page === 'funds' && (
             <div className="funds-container fade-in">
               <div className="form-card">
-                <h2>Add Funds (bKash)</h2>
+                <h2>Deposit via bKash</h2>
                 <p className="subtitle">Minimum: ৳50 • Instant Credit</p>
-                <input
-                  type="number"
-                  id="depositAmount"
-                  placeholder="Amount in BDT"
-                  className="input-field"
+                <input 
+                  type="number" 
+                  id="depositAmount" 
+                  placeholder="Amount in BDT" 
+                  className="input-field" 
                 />
-                <button
-                  className="primary-btn deposit"
-                  onClick={() => {
-                    const amount = document.getElementById('depositAmount').value;
-                    handleDeposit(amount);
-                    document.getElementById('depositAmount').value = '';
-                  }}
-                >
-                  Deposit via bKash
+                <button className="primary-btn deposit" onClick={handleDeposit}>
+                  Deposit Now
                 </button>
-                <p className="help-text">Send money to bKash: 017XXXXXXXX</p>
+                <p className="help-text">Send money to: <strong>01711-234567</strong></p>
               </div>
 
-              <div className="form-card" style={{ marginTop: '20px' }}>
+              <div className="form-card" style={{marginTop: '24px'}}>
                 <h2>Withdraw to bKash</h2>
                 <p className="subtitle">Available: ৳{balance}</p>
-                <input
-                  type="number"
-                  id="withdrawAmount"
-                  placeholder="Amount to Withdraw"
-                  className="input-field"
+                <input 
+                  type="number" 
+                  id="withdrawAmount" 
+                  placeholder="Amount to withdraw" 
+                  className="input-field" 
                 />
-                <input
-                  type="text"
-                  id="bKashNumber"
-                  placeholder="bKash Number (01XXXXXXXXX)"
-                  className="input-field"
-                  maxLength="11"
+                <input 
+                  type="text" 
+                  id="bKashNumber" 
+                  placeholder="bKash Number (01XXXXXXXXX)" 
+                  className="input-field" 
+                  maxLength="11" 
                 />
-                <button
-                  className="primary-btn withdraw"
-                  onClick={() => {
-                    const amount = document.getElementById('withdrawAmount').value;
-                    const wallet = document.getElementById('bKashNumber').value;
-                    handleWithdraw(amount, wallet);
-                    document.getElementById('withdrawAmount').value = '';
-                    document.getElementById('bKashNumber').value = '';
-                  }}
-                >
+                <button className="primary-btn withdraw" onClick={handleWithdraw}>
                   Request Withdrawal
                 </button>
               </div>
@@ -260,20 +237,20 @@ function App() {
           {/* TOURNAMENTS PAGE */}
           {page === 'tournament' && (
             <div className="fade-in">
-              <h2 className="section-title">All Tournaments</h2>
+              <h2 className="section-title">Available Tournaments</h2>
               <div className="tournaments-grid">
-                {[1, 2, 3, 4, 5].map(id => (
+                {[1,2,3,4,5].map(id => (
                   <div key={id} className="tournament-card">
-                    <h3>Squad Battle • {id % 2 === 0 ? 'Miramar' : 'Bermuda'}</h3>
+                    <h3>Squad Battle • {id % 2 === 0 ? "Miramar" : "Bermuda"}</h3>
                     <div className="meta-row">
-                      <span>Entry: <strong>৳{20 + id * 10}</strong></span>
-                      <span>Prize Pool: <strong>৳{800 + id * 300}</strong></span>
+                      <span>Entry: <strong>৳{30 + id*10}</strong></span>
+                      <span>Prize Pool: <strong>৳{900 + id*400}</strong></span>
                     </div>
                     <div className="meta-row">
-                      <span>Players: 48/64</span>
-                      <span>Starts in: 12m</span>
+                      <span>48/64 Players</span>
+                      <span>Starts in 18 min</span>
                     </div>
-                    <button className="join-btn">Join Now</button>
+                    <button className="join-btn">Join Tournament</button>
                   </div>
                 ))}
               </div>
@@ -287,10 +264,11 @@ function App() {
               <div className="profile-info">
                 <p><strong>Name:</strong> {accountName}</p>
                 <p><strong>Region:</strong> Bangladesh</p>
-                <p><strong>Status:</strong> <span style={{ color: '#22c55e' }}>● Online</span></p>
+                <p><strong>Status:</strong> <span style={{color: '#22c55e'}}>● Online</span></p>
                 <p><strong>Joined:</strong> March 2025</p>
-                <p><strong>Total Matches:</strong> 124</p>
-                <p><strong>Win Rate:</strong> 68%</p>
+                <p><strong>Total Matches:</strong> 137</p>
+                <p><strong>Win Rate:</strong> 71%</p>
+                <p><strong>Favorite Map:</strong> Bermuda</p>
               </div>
             </div>
           )}
@@ -298,17 +276,32 @@ function App() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <BottomNav />
+      <div className="bottom-nav">
+        <button onClick={() => setPage('home')} className={`nav-item ${page === 'home' ? 'active' : ''}`}>
+          {ICONS.home}<span>Home</span>
+        </button>
+        <button onClick={() => setPage('funds')} className={`nav-item ${page === 'funds' ? 'active' : ''}`}>
+          {ICONS.funds}<span>Funds</span>
+        </button>
+        <button onClick={() => setPage('tournament')} className={`nav-item ${page === 'tournament' ? 'active' : ''}`}>
+          {ICONS.trophy}<span>Tourneys</span>
+        </button>
+        <button onClick={() => setPage('profile')} className={`nav-item ${page === 'profile' ? 'active' : ''}`}>
+          {ICONS.profile}<span>Profile</span>
+        </button>
+      </div>
 
       {/* Toast Notification */}
-      {showToast && (
-        <div className="toast">{toastMessage}</div>
+      {toast.show && (
+        <div className="toast">{toast.message}</div>
       )}
     </div>
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+// Render the app
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
