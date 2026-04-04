@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
+import './main.css';
 
 const ICONS = {
   home: (
@@ -41,8 +42,13 @@ function App() {
     { id: 2, type: 'deposit', amount: 500, date: 'Yesterday', status: 'Completed' },
     { id: 3, type: 'withdraw', amount: -300, date: 'Mar 31', status: 'Completed' },
   ]);
-
   const [toast, setToast] = useState({ show: false, message: '' });
+  
+  // Refs for form inputs (React best practice)
+  const depositAmountRef = useRef(null);
+  const withdrawAmountRef = useRef(null);
+  const bKashNumberRef = useRef(null);
+  
   const accountName = "Ryno_King_Sir";
 
   const showToast = (message) => {
@@ -51,8 +57,7 @@ function App() {
   };
 
   const handleDeposit = () => {
-    const input = document.getElementById('depositAmount');
-    const amount = parseInt(input?.value);
+    const amount = parseInt(depositAmountRef.current?.value);
 
     if (!amount || amount < 50) {
       showToast("Minimum deposit amount is ৳50");
@@ -69,15 +74,12 @@ function App() {
     }, ...prev]);
 
     showToast(`৳${amount} added successfully via bKash!`);
-    if (input) input.value = '';
+    if (depositAmountRef.current) depositAmountRef.current.value = '';
   };
 
   const handleWithdraw = () => {
-    const amountInput = document.getElementById('withdrawAmount');
-    const numberInput = document.getElementById('bKashNumber');
-
-    const amount = parseInt(amountInput?.value);
-    const number = numberInput?.value.trim();
+    const amount = parseInt(withdrawAmountRef.current?.value);
+    const number = bKashNumberRef.current?.value.trim();
 
     if (!amount || amount < 50) {
       showToast("Minimum withdrawal is ৳50");
@@ -102,8 +104,8 @@ function App() {
     }, ...prev]);
 
     showToast(`Withdrawal request of ৳${amount} sent to ${number}`);
-    if (amountInput) amountInput.value = '';
-    if (numberInput) numberInput.value = '';
+    if (withdrawAmountRef.current) withdrawAmountRef.current.value = '';
+    if (bKashNumberRef.current) bKashNumberRef.current.value = '';
   };
 
   return (
@@ -112,16 +114,16 @@ function App() {
       <aside className="sidebar">
         <div className="logo" onClick={() => setPage('home')}>R</div>
         <nav className="nav-menu">
-          <button className={`nav-btn ${page === 'home' ? 'active' : ''}`} onClick={() => setPage('home')}>
+          <button className={`nav-btn ${page === 'home' ? 'active' : ''}`} onClick={() => setPage('home')} aria-label="Home">
             {ICONS.home}
           </button>
-          <button className={`nav-btn ${page === 'funds' ? 'active' : ''}`} onClick={() => setPage('funds')}>
+          <button className={`nav-btn ${page === 'funds' ? 'active' : ''}`} onClick={() => setPage('funds')} aria-label="Funds">
             {ICONS.funds}
           </button>
-          <button className={`nav-btn ${page === 'tournament' ? 'active' : ''}`} onClick={() => setPage('tournament')}>
+          <button className={`nav-btn ${page === 'tournament' ? 'active' : ''}`} onClick={() => setPage('tournament')} aria-label="Tournaments">
             {ICONS.trophy}
           </button>
-          <button className={`nav-btn ${page === 'profile' ? 'active' : ''}`} onClick={() => setPage('profile')}>
+          <button className={`nav-btn ${page === 'profile' ? 'active' : ''}`} onClick={() => setPage('profile')} aria-label="Profile">
             {ICONS.profile}
           </button>
         </nav>
@@ -137,10 +139,10 @@ function App() {
           <div className="header-right">
             <div className="balance-pill">
               <span className="currency">৳</span>
-              <span className="amount">{balance}</span>
+              <span className="amount">{balance.toLocaleString()}</span>
               <span className="currency-small"> BDT</span>
             </div>
-            <button className="icon-btn">{ICONS.bell}</button>
+            <button className="icon-btn" aria-label="Notifications">{ICONS.bell}</button>
           </div>
         </header>
 
@@ -150,7 +152,7 @@ function App() {
             <div className="fade-in">
               <div className="stats-grid">
                 <div className="stat-card">
-                  <span className="stat-value">৳{balance}</span>
+                  <span className="stat-value">৳{balance.toLocaleString()}</span>
                   <span className="stat-label">Current Balance</span>
                 </div>
                 <div className="stat-card">
@@ -182,10 +184,10 @@ function App() {
                         {tx.type === 'deposit' ? 'Deposit via bKash' : 
                          tx.type === 'win' ? 'Tournament Win' : 'Withdrawal to bKash'}
                       </strong>
-                      <p>{tx.date}</p>
+                      <p className="tx-date">{tx.date} • {tx.status}</p>
                     </div>
                     <span className={`tx-amount ${tx.amount > 0 ? 'positive' : 'negative'}`}>
-                      {tx.amount > 0 ? '+' : ''}৳{Math.abs(tx.amount)}
+                      {tx.amount > 0 ? '+' : ''}৳{Math.abs(tx.amount).toLocaleString()}
                     </span>
                   </div>
                 ))}
@@ -201,9 +203,10 @@ function App() {
                 <p className="subtitle">Minimum: ৳50 • Instant Credit</p>
                 <input 
                   type="number" 
-                  id="depositAmount" 
+                  ref={depositAmountRef}
                   placeholder="Amount in BDT" 
                   className="input-field" 
+                  min="50"
                 />
                 <button className="primary-btn deposit" onClick={handleDeposit}>
                   Deposit Now
@@ -213,19 +216,21 @@ function App() {
 
               <div className="form-card" style={{marginTop: '24px'}}>
                 <h2>Withdraw to bKash</h2>
-                <p className="subtitle">Available: ৳{balance}</p>
+                <p className="subtitle">Available: ৳{balance.toLocaleString()}</p>
                 <input 
                   type="number" 
-                  id="withdrawAmount" 
+                  ref={withdrawAmountRef}
                   placeholder="Amount to withdraw" 
                   className="input-field" 
+                  min="50"
                 />
                 <input 
-                  type="text" 
-                  id="bKashNumber" 
+                  type="tel" 
+                  ref={bKashNumberRef}
                   placeholder="bKash Number (01XXXXXXXXX)" 
                   className="input-field" 
                   maxLength="11" 
+                  pattern="^01[0-9]{9}$"
                 />
                 <button className="primary-btn withdraw" onClick={handleWithdraw}>
                   Request Withdrawal
@@ -264,7 +269,7 @@ function App() {
               <div className="profile-info">
                 <p><strong>Name:</strong> {accountName}</p>
                 <p><strong>Region:</strong> Bangladesh</p>
-                <p><strong>Status:</strong> <span style={{color: '#22c55e'}}>● Online</span></p>
+                <p><strong>Status:</strong> <span className="status-online">● Online</span></p>
                 <p><strong>Joined:</strong> March 2025</p>
                 <p><strong>Total Matches:</strong> 137</p>
                 <p><strong>Win Rate:</strong> 71%</p>
@@ -276,24 +281,24 @@ function App() {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <div className="bottom-nav">
-        <button onClick={() => setPage('home')} className={`nav-item ${page === 'home' ? 'active' : ''}`}>
+      <nav className="bottom-nav" role="navigation">
+        <button onClick={() => setPage('home')} className={`nav-item ${page === 'home' ? 'active' : ''}`} aria-label="Home">
           {ICONS.home}<span>Home</span>
         </button>
-        <button onClick={() => setPage('funds')} className={`nav-item ${page === 'funds' ? 'active' : ''}`}>
+        <button onClick={() => setPage('funds')} className={`nav-item ${page === 'funds' ? 'active' : ''}`} aria-label="Funds">
           {ICONS.funds}<span>Funds</span>
         </button>
-        <button onClick={() => setPage('tournament')} className={`nav-item ${page === 'tournament' ? 'active' : ''}`}>
+        <button onClick={() => setPage('tournament')} className={`nav-item ${page === 'tournament' ? 'active' : ''}`} aria-label="Tournaments">
           {ICONS.trophy}<span>Tourneys</span>
         </button>
-        <button onClick={() => setPage('profile')} className={`nav-item ${page === 'profile' ? 'active' : ''}`}>
+        <button onClick={() => setPage('profile')} className={`nav-item ${page === 'profile' ? 'active' : ''}`} aria-label="Profile">
           {ICONS.profile}<span>Profile</span>
         </button>
-      </div>
+      </nav>
 
       {/* Toast Notification */}
       {toast.show && (
-        <div className="toast">{toast.message}</div>
+        <div className="toast" role="alert">{toast.message}</div>
       )}
     </div>
   );
